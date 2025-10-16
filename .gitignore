@@ -50,3 +50,10 @@
 
 # Embedded web-server pid file
 /.web-server-pid
+
+/composer.lock
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+
+.idea/
+docker-compose.yml
