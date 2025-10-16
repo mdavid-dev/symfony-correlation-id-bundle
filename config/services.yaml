@@ -21,3 +21,14 @@ services:
       $enabled: '%correlation_id.validation.enabled%'
       $maxLength: '%correlation_id.validation.max_length%'
       $pattern: '%correlation_id.validation.pattern%'
+
+  # Request Listener
+  MdavidDev\SymfonyCorrelationIdBundle\EventListener\RequestListener:
+    arguments:
+      $storage: '@MdavidDev\SymfonyCorrelationIdBundle\Service\CorrelationIdStorage'
+      $generator: '@MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface'
+      $validator: '@MdavidDev\SymfonyCorrelationIdBundle\Validator\CorrelationIdValidator'
+      $headerName: '%correlation_id.header_name%'
+      $trustHeader: '%correlation_id.trust_header%'
+    tags:
+      - { name: kernel.event_subscriber }
