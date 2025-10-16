@@ -14,3 +14,10 @@ services:
   MdavidDev\SymfonyCorrelationIdBundle\Service\CorrelationIdStorage:
     arguments:
       $requestStack: '@request_stack'
+
+  # Validateur d'ID de corrélation
+  MdavidDev\SymfonyCorrelationIdBundle\Validator\CorrelationIdValidator:
+    arguments:
+      $enabled: '%correlation_id.validation.enabled%'
+      $maxLength: '%correlation_id.validation.max_length%'
+      $pattern: '%correlation_id.validation.pattern%'

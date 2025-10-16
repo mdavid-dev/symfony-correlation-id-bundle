@@ -20,7 +20,12 @@ final class CorrelationIdExtension extends Extension
         $container->setParameter('correlation_id.header_name', $config['header_name']);
         $container->setParameter('correlation_id.generator', $config['generator']);
         $container->setParameter('correlation_id.trust_header', $config['trust_header']);
-        $container->setParameter('correlation_id.validation', $config['validation']);
+
+        // Enregistrer les sous-paramètres de validation
+        $container->setParameter('correlation_id.validation.enabled', $config['validation']['enabled']);
+        $container->setParameter('correlation_id.validation.max_length', $config['validation']['max_length']);
+        $container->setParameter('correlation_id.validation.pattern', $config['validation']['pattern']);
+
         $container->setParameter('correlation_id.monolog', $config['monolog']);
         $container->setParameter('correlation_id.http_client', $config['http_client']);
         $container->setParameter('correlation_id.messenger', $config['messenger']);
