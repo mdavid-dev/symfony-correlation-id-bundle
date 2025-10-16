@@ -3,5 +3,9 @@ services:
     autowire: true
     autoconfigure: true
 
-  # Les services seront ajoutés ici au fur et à mesure
-  # Pour l'instant, ce fichier est vide mais prêt à accueillir nos services
+  # Interface pour les générateurs d'ID
+  MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface:
+    class: MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\UuidV4Generator
+
+  # Générateur UUID v4 (par défaut)
+  MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\UuidV4Generator: ~
