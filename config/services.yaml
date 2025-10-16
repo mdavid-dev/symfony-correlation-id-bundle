@@ -9,3 +9,8 @@ services:
 
   # Générateur UUID v4 (par défaut)
   MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\UuidV4Generator: ~
+
+  # Service de stockage de l'ID de corrélation
+  MdavidDev\SymfonyCorrelationIdBundle\Service\CorrelationIdStorage:
+    arguments:
+      $requestStack: '@request_stack'
