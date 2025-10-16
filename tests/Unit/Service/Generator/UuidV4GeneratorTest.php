@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MdavidDev\SymfonyCorrelationIdBundle\Tests\Unit\Service\Generator;
 
-use MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface;
 use MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\UuidV4Generator;
 use PHPUnit\Framework\TestCase;
 
@@ -15,11 +14,6 @@ class UuidV4GeneratorTest extends TestCase
     protected function setUp(): void
     {
         $this->generator = new UuidV4Generator();
-    }
-
-    public function testImplementsInterface(): void
-    {
-        $this->assertInstanceOf(CorrelationIdGeneratorInterface::class, $this->generator);
     }
 
     public function testGenerateReturnsString(): void

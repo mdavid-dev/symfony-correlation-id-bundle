@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace MdavidDev\SymfonyCorrelationIdBundle\Tests\Functional\DependencyInjection;
 
+use Exception;
 use MdavidDev\SymfonyCorrelationIdBundle\DependencyInjection\CorrelationIdExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class ExtensionTest extends TestCase
 {
+    /**
+     * @throws Exception
+     */
     public function testExtensionLoadsWithDefaultConfig(): void
     {
         $container = new ContainerBuilder();
@@ -27,6 +31,9 @@ class ExtensionTest extends TestCase
         $this->assertTrue($container->getParameter('correlation_id.trust_header'));
     }
 
+    /**
+     * @throws Exception
+     */
     public function testExtensionLoadsWithCustomConfig(): void
     {
         $container = new ContainerBuilder();

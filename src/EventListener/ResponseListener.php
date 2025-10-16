@@ -9,11 +9,11 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-final class ResponseListener implements EventSubscriberInterface
+final readonly class ResponseListener implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly CorrelationIdStorage $storage,
-        private readonly string $headerName
+        private CorrelationIdStorage $storage,
+        private string               $headerName
     ) {
     }
 

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace MdavidDev\SymfonyCorrelationIdBundle\Tests\Functional;
 
+use Exception;
 use MdavidDev\SymfonyCorrelationIdBundle\SymfonyCorrelationIdBundle;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\HttpKernel\Kernel;
 
@@ -46,11 +48,14 @@ class CorrelationIdTestKernel extends Kernel
     public function registerBundles(): array
     {
         return [
-            new \Symfony\Bundle\FrameworkBundle\FrameworkBundle(),
+            new FrameworkBundle(),
             new SymfonyCorrelationIdBundle(),
         ];
     }
 
+    /**
+     * @throws Exception
+     */
     public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(function ($container) {

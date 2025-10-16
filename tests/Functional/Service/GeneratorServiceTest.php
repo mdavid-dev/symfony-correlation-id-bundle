@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace MdavidDev\SymfonyCorrelationIdBundle\Tests\Functional\Service;
 
+use Exception;
 use MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface;
 use MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\UuidV4Generator;
 use MdavidDev\SymfonyCorrelationIdBundle\SymfonyCorrelationIdBundle;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -26,7 +28,6 @@ class GeneratorServiceTest extends TestCase
 
         $generator = $container->get(CorrelationIdGeneratorInterface::class);
         $this->assertInstanceOf(UuidV4Generator::class, $generator);
-        $this->assertInstanceOf(CorrelationIdGeneratorInterface::class, $generator);
 
         $kernel->shutdown();
     }
@@ -57,11 +58,14 @@ class GeneratorTestKernel extends Kernel
     public function registerBundles(): array
     {
         return [
-            new \Symfony\Bundle\FrameworkBundle\FrameworkBundle(),
+            new FrameworkBundle(),
             new SymfonyCorrelationIdBundle(),
         ];
     }
 
+    /**
+     * @throws Exception
+     */
     public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(function (ContainerBuilder $container) {

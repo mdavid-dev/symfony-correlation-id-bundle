@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace MdavidDev\SymfonyCorrelationIdBundle\Tests\Functional\EventListener;
 
+use Exception;
 use MdavidDev\SymfonyCorrelationIdBundle\EventListener\ResponseListener;
 use MdavidDev\SymfonyCorrelationIdBundle\Service\CorrelationIdStorage;
 use MdavidDev\SymfonyCorrelationIdBundle\SymfonyCorrelationIdBundle;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -95,11 +97,14 @@ class ResponseListenerTestKernel extends Kernel
     public function registerBundles(): array
     {
         return [
-            new \Symfony\Bundle\FrameworkBundle\FrameworkBundle(),
+            new FrameworkBundle(),
             new SymfonyCorrelationIdBundle(),
         ];
     }
 
+    /**
+     * @throws Exception
+     */
     public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(function (ContainerBuilder $container) {

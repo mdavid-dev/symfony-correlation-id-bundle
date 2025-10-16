@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace MdavidDev\SymfonyCorrelationIdBundle\Validator;
 
-final class CorrelationIdValidator
+final readonly class CorrelationIdValidator
 {
     public function __construct(
-        private readonly bool $enabled,
-        private readonly int $maxLength,
-        private readonly ?string $pattern
+        private bool    $enabled,
+        private int     $maxLength,
+        private ?string $pattern
     ) {
     }
 
