@@ -1,58 +1,127 @@
+# Bundle Symfony - Correlation ID
+
+## User Story
+
 En tant que développeur Symfony, je souhaite un bundle qui gère automatiquement l'ID de corrélation pour mes requêtes afin de faciliter le suivi et le débogage dans mon application et potentiellement à travers plusieurs services.
 
-Pour cela, le bundle devra :
+---
 
-1.  **Gérer l'ID de corrélation pour les requêtes HTTP :**
-    * Si une requête entrante contient un header d'ID de corrélation, le bundle doit le récupérer et le rendre disponible.
-    * Si la requête entrante ne contient pas d'ID, le bundle doit en générer un.
-    * L'ID de corrélation courant doit être propagé dans la réponse HTTP via le même header.
+## Fonctionnalités
 
-2.  **Être facile à installer :**
-    * Le bundle doit s'installer via Composer sans nécessiter de configuration manuelle complexe (la configuration se fera principalement via un fichier YAML).
+### 1. Gérer l'ID de corrélation pour les requêtes HTTP
 
-3.  **Permettre la configuration du format de l'ID :**
-    * Je dois pouvoir configurer le format de l'ID de corrélation (par exemple, UUID, incrémental) via un fichier YAML.
+- Si une requête entrante contient un header d'ID de corrélation, le bundle doit le récupérer et le rendre disponible
+- Si la requête entrante ne contient pas d'ID, le bundle doit en générer un
+- L'ID de corrélation courant doit être propagé dans la réponse HTTP via le même header
+- **Validation** : L'ID reçu doit être validé (format, longueur max) pour éviter les injections malveillantes
+- **Sources de confiance** : Possibilité de configurer si on accepte l'ID provenant du header ou si on en génère toujours un nouveau
 
-4.  **S'intégrer avec Monolog :**
-    * Le bundle doit modifier la sortie de Monolog pour inclure l'ID de corrélation dans les logs.
-    * Je dois pouvoir configurer le format de la sortie de Monolog (par exemple, le champ où l'ID est ajouté) via le fichier YAML.
+### 2. Gérer l'ID de corrélation pour les commandes CLI
 
-5.  **Propager l'ID de corrélation via Symfony Messenger :**
-    * Lors de l'envoi d'un message via Messenger, l'ID de corrélation courant doit être automatiquement propagé avec le message (via un Stamp).
-    * Lors de la réception d'un message, l'ID de corrélation (s'il est présent dans le Stamp) doit être rendu disponible pour le contexte de traitement du message.
+- Lors de l'exécution d'une commande console, un ID de corrélation doit être généré automatiquement
+- L'ID généré pour CLI doit avoir un préfixe configurable (par défaut : `CLI-`)
+- Possibilité de passer un ID de corrélation via une option de commande : `--correlation-id=xxx`
+- L'ID doit être accessible dans le contexte d'exécution de la commande
 
-6.  **Permettre la configuration du nom du header HTTP :**
-    * Je dois pouvoir configurer le nom du header HTTP utilisé pour l'ID de corrélation via le fichier YAML.
+### 3. Propager l'ID de corrélation vers les clients HTTP sortants
 
-7.  **Fournir un service pour accéder à l'ID de corrélation courant :**
-    * Un service injectable doit être disponible pour que je puisse récupérer l'ID de corrélation actuel dans n'importe quel service de mon application.
+- Lors d'appels HTTP sortants via Symfony HttpClient, l'ID de corrélation courant doit être automatiquement ajouté dans les headers
+- Cette propagation doit être configurable (activable/désactivable)
+- Le nom du header utilisé pour la propagation doit être cohérent avec la configuration
 
-**Critères d'acceptation (par fonctionnalité) :**
+### 4. Propager l'ID de corrélation via Symfony Messenger
 
-1.  **Gestion HTTP :**
-    * Vérifier que si un header est présent dans la requête, il est utilisé.
-    * Vérifier que si aucun header n'est présent, un ID est généré.
-    * Vérifier que l'ID courant est présent dans l'en-tête de la réponse.
+- Lors de l'envoi d'un message via Messenger, l'ID de corrélation courant doit être automatiquement propagé avec le message (via un Stamp)
+- Lors de la réception d'un message, l'ID de corrélation (s'il est présent dans le Stamp) doit être rendu disponible pour le contexte de traitement du message
+- Reset automatique de l'ID entre chaque traitement de message (important pour les workers long-running)
+- Cette propagation doit être configurable (activable/désactivable)
 
-2.  **Installation :**
-    * L'installation via `composer require` ne doit pas nécessiter d'étapes manuelles supplémentaires pour activer les fonctionnalités de base.
+### 5. S'intégrer avec Monolog
 
-3.  **Format de l'ID :**
-    * La configuration YAML permet de choisir différents formats d'ID.
-    * Les ID générés correspondent au format configuré.
+- Le bundle doit modifier la sortie de Monolog pour inclure l'ID de corrélation dans les logs
+- Configuration du nom de la clé où l'ID est ajouté dans les logs (par défaut : `correlation_id`)
+- Configuration pour activer/désactiver l'intégration avec Monolog
+- L'ID doit apparaître dans tous les logs (HTTP, CLI, Messenger)
 
-4.  **Intégration Monolog :**
-    * Les logs contiennent l'ID de corrélation dans le format configuré.
-    * La configuration YAML permet de définir le format de sortie de Monolog lié à l'ID.
+### 6. Être facile à installer
 
-5.  **Intégration Messenger :**
-    * Les messages envoyés via Messenger contiennent un Stamp avec l'ID de corrélation.
-    * L'ID de corrélation du Stamp est accessible lors du traitement du message.
+- Le bundle doit s'installer via Composer : `composer require vendor/correlation-id-bundle`
+- Configuration automatique via Symfony Flex si possible
+- Fonctionnement "zero-config" avec des valeurs par défaut sensées
+- Configuration optionnelle via fichier YAML
 
-6.  **Nom du header HTTP :**
-    * La configuration YAML permet de définir le nom du header HTTP utilisé.
-    * L'ID de corrélation est lu et écrit dans le header configuré.
+### 7. Permettre la configuration du format de l'ID
 
-7.  **Service d'accès :**
-    * Un service peut être injecté pour récupérer l'ID de corrélation courant.
-    * L'ID retourné par le service correspond à l'ID de la requête courante ou à celui généré.
+- Formats supportés par défaut :
+  - `uuid_v4` : UUID version 4 (par défaut)
+  - `uuid_v7` : UUID version 7 (time-ordered)
+  - `ulid` : ULID (Universally Unique Lexicographically Sortable Identifier)
+- Possibilité de définir un générateur custom via une interface
+
+### 8. Permettre la configuration du nom du header HTTP
+
+- Configuration du nom du header HTTP utilisé pour l'ID de corrélation
+- Valeur par défaut : `X-Correlation-ID`
+- Appliqué aux requêtes entrantes, réponses sortantes et requêtes HTTP sortantes
+
+### 9. Fournir un service pour accéder à l'ID de corrélation courant
+
+- Un service injectable (`CorrelationIdStorage` ou similaire) doit être disponible
+- Le service permet de récupérer l'ID de corrélation actuel
+- Le service permet de définir manuellement un ID si nécessaire (cas avancés)
+- Utilisation du `RequestStack` pour le stockage interne (compatible avec sub-requests)
+
+### 10. Extensibilité
+
+- Interface `CorrelationIdGeneratorInterface` pour créer des générateurs custom
+- Événements dispatché :
+  - `CorrelationIdGeneratedEvent` : Quand un nouvel ID est généré
+  - `CorrelationIdRetrievedEvent` : Quand un ID est récupéré depuis le header
+
+### 11. Gestion des sous-requêtes Symfony
+
+- Les sub-requests (ESI, forward) doivent conserver le même ID de corrélation que la requête principale
+- Pas de génération d'un nouvel ID pour les sub-requests
+
+---
+
+## Configuration par défaut
+
+```yaml
+correlation_id:
+    # Nom du header HTTP
+    header_name: 'X-Correlation-ID'
+    
+    # Générateur d'ID (uuid_v4, uuid_v7, ulid, ou service custom)
+    generator: 'uuid_v4'
+    
+    # Validation des IDs entrants
+    validation:
+        enabled: true
+        max_length: 255
+        # Pattern regex pour valider le format (null = pas de validation pattern)
+        pattern: null
+    
+    # Accepter l'ID du header entrant ou toujours générer un nouveau
+    trust_header: true
+    
+    # Intégration Monolog
+    monolog:
+        enabled: true
+        # Nom de la clé dans les logs
+        key: 'correlation_id'
+    
+    # Propagation vers HttpClient
+    http_client:
+        enabled: true
+    
+    # Propagation via Messenger
+    messenger:
+        enabled: true
+    
+    # Configuration CLI
+    cli:
+        enabled: true
+        prefix: 'CLI-'
+        # Permettre --correlation-id en option
+        allow_option: true
