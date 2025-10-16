@@ -1,127 +1,214 @@
-# Bundle Symfony - Correlation ID
+# Symfony Correlation ID Bundle
 
-## User Story
+A Symfony bundle to automatically manage correlation IDs across HTTP requests and responses, making it easy to trace and debug your application.
 
-En tant que développeur Symfony, je souhaite un bundle qui gère automatiquement l'ID de corrélation pour mes requêtes afin de faciliter le suivi et le débogage dans mon application et potentiellement à travers plusieurs services.
+## Features
 
----
+- **Automatic ID Management**: Extracts correlation ID from incoming request headers or generates a new UUID v4
+- **Configurable & Secure**: Validate incoming IDs (length, format), trust or ignore incoming headers
+- **Easy to Use**: Zero-config installation with sensible defaults
+- **Production Ready**: 100% test coverage, follows Symfony best practices
 
-## Fonctionnalités
+## Installation
 
-### 1. Gérer l'ID de corrélation pour les requêtes HTTP
+### 1. Install via Composer
 
-- Si une requête entrante contient un header d'ID de corrélation, le bundle doit le récupérer et le rendre disponible
-- Si la requête entrante ne contient pas d'ID, le bundle doit en générer un
-- L'ID de corrélation courant doit être propagé dans la réponse HTTP via le même header
-- **Validation** : L'ID reçu doit être validé (format, longueur max) pour éviter les injections malveillantes
-- **Sources de confiance** : Possibilité de configurer si on accepte l'ID provenant du header ou si on en génère toujours un nouveau
+```bash
+composer require mdavid-dev/symfony-correlation-id-bundle
+```
 
-### 2. Gérer l'ID de corrélation pour les commandes CLI
+### 2. Enable the Bundle
 
-- Lors de l'exécution d'une commande console, un ID de corrélation doit être généré automatiquement
-- L'ID généré pour CLI doit avoir un préfixe configurable (par défaut : `CLI-`)
-- Possibilité de passer un ID de corrélation via une option de commande : `--correlation-id=xxx`
-- L'ID doit être accessible dans le contexte d'exécution de la commande
+```
+<?php
 
-### 3. Propager l'ID de corrélation vers les clients HTTP sortants
+return [
+    // ...
+    MdavidDev\SymfonyCorrelationIdBundle\SymfonyCorrelationIdBundle::class => ['all' => true],
+];
+```
 
-- Lors d'appels HTTP sortants via Symfony HttpClient, l'ID de corrélation courant doit être automatiquement ajouté dans les headers
-- Cette propagation doit être configurable (activable/désactivable)
-- Le nom du header utilisé pour la propagation doit être cohérent avec la configuration
+### 3. That's it!
 
-### 4. Propager l'ID de corrélation via Symfony Messenger
+The bundle works out-of-the-box with default configuration.
 
-- Lors de l'envoi d'un message via Messenger, l'ID de corrélation courant doit être automatiquement propagé avec le message (via un Stamp)
-- Lors de la réception d'un message, l'ID de corrélation (s'il est présent dans le Stamp) doit être rendu disponible pour le contexte de traitement du message
-- Reset automatique de l'ID entre chaque traitement de message (important pour les workers long-running)
-- Cette propagation doit être configurable (activable/désactivable)
+## Quick Start
 
-### 5. S'intégrer avec Monolog
+### Basic Usage
 
-- Le bundle doit modifier la sortie de Monolog pour inclure l'ID de corrélation dans les logs
-- Configuration du nom de la clé où l'ID est ajouté dans les logs (par défaut : `correlation_id`)
-- Configuration pour activer/désactiver l'intégration avec Monolog
-- L'ID doit apparaître dans tous les logs (HTTP, CLI, Messenger)
+Basic Usage
+Once installed, the bundle automatically:
 
-### 6. Être facile à installer
+1. Reads the X-Correlation-ID header from incoming requests
+2. Generates a UUID v4 if the header is missing
+3. Adds the correlation ID to all response headers
 
-- Le bundle doit s'installer via Composer : `composer require vendor/correlation-id-bundle`
-- Configuration automatique via Symfony Flex si possible
-- Fonctionnement "zero-config" avec des valeurs par défaut sensées
-- Configuration optionnelle via fichier YAML
+**Example Request:**
+```
+GET /api/users HTTP/1.1
+Host: example.com
+X-Correlation-ID: 550e8400-e29b-41d4-a716-446655440000
+```
 
-### 7. Permettre la configuration du format de l'ID
+**Example Response:**
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+X-Correlation-ID: 550e8400-e29b-41d4-a716-446655440000
 
-- Formats supportés par défaut :
-  - `uuid_v4` : UUID version 4 (par défaut)
-  - `uuid_v7` : UUID version 7 (time-ordered)
-  - `ulid` : ULID (Universally Unique Lexicographically Sortable Identifier)
-- Possibilité de définir un générateur custom via une interface
+{"users": [...]}
+```
 
-### 8. Permettre la configuration du nom du header HTTP
+## Configuration
 
-- Configuration du nom du header HTTP utilisé pour l'ID de corrélation
-- Valeur par défaut : `X-Correlation-ID`
-- Appliqué aux requêtes entrantes, réponses sortantes et requêtes HTTP sortantes
-
-### 9. Fournir un service pour accéder à l'ID de corrélation courant
-
-- Un service injectable (`CorrelationIdStorage` ou similaire) doit être disponible
-- Le service permet de récupérer l'ID de corrélation actuel
-- Le service permet de définir manuellement un ID si nécessaire (cas avancés)
-- Utilisation du `RequestStack` pour le stockage interne (compatible avec sub-requests)
-
-### 10. Extensibilité
-
-- Interface `CorrelationIdGeneratorInterface` pour créer des générateurs custom
-- Événements dispatché :
-  - `CorrelationIdGeneratedEvent` : Quand un nouvel ID est généré
-  - `CorrelationIdRetrievedEvent` : Quand un ID est récupéré depuis le header
-
-### 11. Gestion des sous-requêtes Symfony
-
-- Les sub-requests (ESI, forward) doivent conserver le même ID de corrélation que la requête principale
-- Pas de génération d'un nouvel ID pour les sub-requests
-
----
-
-## Configuration par défaut
-
-```yaml
+### Default Configuration
+```
+# config/packages/correlation_id.yaml
 correlation_id:
-    # Nom du header HTTP
     header_name: 'X-Correlation-ID'
-    
-    # Générateur d'ID (uuid_v4, uuid_v7, ulid, ou service custom)
     generator: 'uuid_v4'
+    trust_header: true
     
-    # Validation des IDs entrants
     validation:
         enabled: true
         max_length: 255
-        # Pattern regex pour valider le format (null = pas de validation pattern)
         pattern: null
     
-    # Accepter l'ID du header entrant ou toujours générer un nouveau
-    trust_header: true
-    
-    # Intégration Monolog
     monolog:
         enabled: true
-        # Nom de la clé dans les logs
         key: 'correlation_id'
     
-    # Propagation vers HttpClient
     http_client:
         enabled: true
     
-    # Propagation via Messenger
     messenger:
         enabled: true
     
-    # Configuration CLI
     cli:
         enabled: true
         prefix: 'CLI-'
-        # Permettre --correlation-id en option
         allow_option: true
+```
+
+### Configuration Examples
+Custom Header Name
+```
+correlation_id:
+    header_name: 'X-Request-ID'
+```
+Disable Trust Header
+Always generate a new ID, ignoring incoming headers:
+```
+correlation_id:
+    trust_header: false
+```
+Strict Validation
+Validate incoming IDs with specific rules:
+```
+correlation_id:
+    validation:
+        enabled: true
+        max_length: 36
+        pattern: '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i'
+```
+
+## Usage in Your Application
+
+### Access the Correlation ID
+Inject the **CorrelationIdStorage** service:
+```
+<?php
+
+namespace App\Controller;
+
+use MdavidDev\SymfonyCorrelationIdBundle\Service\CorrelationIdStorage;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Routing\Annotation\Route;
+
+class UserController extends AbstractController
+{
+    public function __construct(
+        private readonly CorrelationIdStorage $correlationIdStorage
+    ) {
+    }
+
+    #[Route('/api/users', methods: ['GET'])]
+    public function list(): JsonResponse
+    {
+        $$correlationId = $$this->correlationIdStorage->get();
+        
+        $this->logger->info('Fetching users', [
+            'correlation_id' => $correlationId,
+        ]);
+
+        return $this->json(['users' => []]);
+    }
+}
+```
+
+### Available Methods
+```
+// Get current correlation ID
+$$id = $$this->correlationIdStorage->get();
+
+// Check if ID exists
+if ($this->correlationIdStorage->has()) {
+    // ...
+}
+
+// Set custom ID (advanced usage)
+$this->correlationIdStorage->set('my-custom-id-123');
+
+// Clear the ID
+$this->correlationIdStorage->clear();
+```
+
+## Advanced Usage
+
+### Custom ID Generator
+Create your own generator:
+```
+<?php
+
+namespace App\Service;
+
+use MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface;
+
+class CustomIdGenerator implements CorrelationIdGeneratorInterface
+{
+    public function generate(): string
+    {
+        return uniqid('APP-', true);
+    }
+}
+```
+Configure it:
+```
+# config/services.yaml
+services:
+    MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface:
+        class: App\Service\CustomIdGenerator
+```
+
+## Testing
+```
+# Install dependencies
+composer install
+
+# Run tests
+vendor/bin/phpunit
+
+# Run with coverage
+vendor/bin/phpunit --coverage-html build/coverage
+```
+
+## Requirements
+- PHP 8.2 or higher
+- Symfony 6.4 or 7.0+
+
+## License
+This bundle is released under the MIT License.
+
+## Contributing
+Contributions are welcome! Please submit a Pull Request.
