@@ -31,6 +31,9 @@ class MonologCompilerPass implements CompilerPassInterface
 
         // Enregistrer le processor
         $this->registerProcessor($container, $monologConfig);
+
+        // Ajouter le processor à tous les loggers Monolog
+        $this->addProcessorToLoggers($container);
     }
 
     protected function isMonologAvailable(): bool
@@ -52,5 +55,37 @@ class MonologCompilerPass implements CompilerPassInterface
             ])
             ->addTag('monolog.processor')
             ->setPublic(false);
+    }
+
+    private function addProcessorToLoggers(ContainerBuilder $container): void
+    {
+        // Chercher tous les services dont l'ID commence par "monolog.logger"
+        foreach ($container->getDefinitions() as $id => $definition) {
+            // Filtrer uniquement les vrais loggers Monolog
+            if (!str_starts_with($id, 'monolog.logger')) {
+                continue;
+            }
+
+            // Vérifier que c'est bien un logger Monolog
+            $class = $definition->getClass();
+            if ($class === null) {
+                $class = $id;
+            }
+
+            // Résoudre la classe si c'est un paramètre
+            if (str_starts_with($class, '%') && str_ends_with($class, '%')) {
+                $class = $container->getParameter(trim($class, '%'));
+            }
+
+            // Vérifier que c'est bien Monolog\Logger ou une sous-classe
+            if ($class !== 'Monolog\\Logger' && !is_subclass_of($class, 'Monolog\\Logger')) {
+                continue;
+            }
+
+            // Ajouter le processor
+            $definition->addMethodCall('pushProcessor', [
+                new Reference(CorrelationIdProcessor::class)
+            ]);
+        }
     }
 }
