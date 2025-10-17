@@ -17,13 +17,14 @@
     "symfony/http-foundation": "^6.4|^7.0",
     "symfony/http-kernel": "^6.4|^7.0",
     "symfony/uid": "^6.4|^7.0",
-    "symfony/yaml": "^7.3"
+    "symfony/yaml": "^6.4|^7.0"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
+    "monolog/monolog": "^3.0",
     "phpunit/phpunit": "^10.0",
-    "symfony/phpunit-bridge": "^6.4|^7.0",
-    "symfony/framework-bundle": "^6.4|^7.0"
+    "symfony/framework-bundle": "^6.4|^7.0",
+    "symfony/phpunit-bridge": "^6.4|^7.0"
   },
   "autoload": {
     "psr-4": {
