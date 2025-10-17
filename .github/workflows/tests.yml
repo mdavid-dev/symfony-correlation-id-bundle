@@ -1,0 +1,55 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: dunglas/frankenphp:latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install system dependencies
+        run: apt-get update && apt-get install -y git curl unzip zip
+
+      - name: Install Xdebug
+        run: pecl install xdebug && docker-php-ext-enable xdebug
+
+      - name: Configure Xdebug
+        run: echo "xdebug.mode=coverage" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+
+      - name: Install Composer
+        run: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Create build directory
+        run: mkdir -p build/coverage
+
+      - name: Run tests
+        run: vendor/bin/phpunit --coverage-html build/coverage
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: build/coverage
