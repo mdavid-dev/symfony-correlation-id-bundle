@@ -5,6 +5,7 @@ A Symfony bundle to automatically manage correlation IDs across HTTP requests an
 ## Features
 
 - **Automatic ID Management**: Extracts correlation ID from incoming request headers or generates a new UUID v4
+- **Monolog Integration**: Automatically adds correlation ID to all logs
 - **Configurable & Secure**: Validate incoming IDs (length, format), trust or ignore incoming headers
 - **Easy to Use**: Zero-config installation with sensible defaults
 - **Production Ready**: 100% test coverage, follows Symfony best practices
@@ -19,7 +20,7 @@ composer require mdavid-dev/symfony-correlation-id-bundle
 
 ### 2. Enable the Bundle
 
-```
+```php
 <?php
 
 return [
@@ -62,7 +63,7 @@ X-Correlation-ID: 550e8400-e29b-41d4-a716-446655440000
 ## Configuration
 
 ### Default Configuration
-```
+```yaml
 # config/packages/correlation_id.yaml
 correlation_id:
     header_name: 'X-Correlation-ID'
@@ -92,31 +93,45 @@ correlation_id:
 
 ### Configuration Examples
 Custom Header Name
-```
+```yaml
 correlation_id:
     header_name: 'X-Request-ID'
 ```
 Disable Trust Header
 Always generate a new ID, ignoring incoming headers:
-```
+```yaml
 correlation_id:
     trust_header: false
 ```
 Strict Validation
 Validate incoming IDs with specific rules:
-```
+```yaml
 correlation_id:
     validation:
         enabled: true
         max_length: 36
         pattern: '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i'
 ```
+#### Enable Monolog Integration
+Automatically add correlation ID to all logs:
+```yaml
+correlation_id:
+    monolog:
+        enabled: true
+        key: 'correlation_id'  # Key name in log extra data
+```
+Disable Monolog integration:
+```yaml
+correlation_id:
+    monolog:
+        enabled: false
+```
 
 ## Usage in Your Application
 
 ### Access the Correlation ID
 Inject the **CorrelationIdStorage** service:
-```
+```php
 <?php
 
 namespace App\Controller;
@@ -148,9 +163,9 @@ class UserController extends AbstractController
 ```
 
 ### Available Methods
-```
+```php
 // Get current correlation ID
-$$id = $$this->correlationIdStorage->get();
+$id = $this->correlationIdStorage->get();
 
 // Check if ID exists
 if ($this->correlationIdStorage->has()) {
@@ -164,11 +179,44 @@ $this->correlationIdStorage->set('my-custom-id-123');
 $this->correlationIdStorage->clear();
 ```
 
+## Monolog Integration
+### Automatic Logging
+When Monolog integration is enabled (default), the correlation ID is automatically added to all log entries in the `extra` field.
+**Example log output:**
+```json
+{
+  "message": "User login successful",
+  "context": {
+    "user_id": 123
+  },
+  "level": 200,
+  "level_name": "INFO",
+  "channel": "app",
+  "datetime": "2024-10-17T10:30:45+00:00",
+  "extra": {
+    "correlation_id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+### Custom Log Key
+Change the key name used in logs:
+```yaml
+correlation_id:
+    monolog:
+        key: 'request_id'  # Will appear as "request_id" in logs
+```
+### Requirements
+Monolog integration requires the monolog/monolog package:
+```bash
+composer require monolog/monolog
+```
+If Monolog is not installed, the integration is automatically disabled.
+
 ## Advanced Usage
 
 ### Custom ID Generator
 Create your own generator:
-```
+```php
 <?php
 
 namespace App\Service;
@@ -184,7 +232,7 @@ class CustomIdGenerator implements CorrelationIdGeneratorInterface
 }
 ```
 Configure it:
-```
+```yaml
 # config/services.yaml
 services:
     MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface:
@@ -192,7 +240,7 @@ services:
 ```
 
 ## Testing
-```
+```bash
 # Install dependencies
 composer install
 
