@@ -20,6 +20,7 @@
     "symfony/yaml": "^6.4|^7.0"
   },
   "require-dev": {
+    "roave/security-advisories": "dev-latest",
     "monolog/monolog": "^3.0",
     "phpunit/phpunit": "^10.0",
     "symfony/framework-bundle": "^6.4|^7.0",
