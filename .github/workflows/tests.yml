@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
+      - name: Create build directory
+        run: mkdir -p build/coverage
+
       - name: Run tests
         run: vendor/bin/phpunit --coverage-html build/coverage
 
