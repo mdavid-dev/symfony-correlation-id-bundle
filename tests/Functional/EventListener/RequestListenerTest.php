@@ -44,16 +44,13 @@ class RequestListenerTest extends TestCase
         $storage = $container->get(CorrelationIdStorage::class);
         $listener = $container->get(RequestListener::class);
 
-        // Créer une requête sans header
         $request = Request::create('/test');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
 
-        // Simuler l'événement
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $listener->onKernelRequest($event);
 
-        // Vérifier qu'un ID a été généré
         $this->assertTrue($storage->has());
         $this->assertNotNull($storage->get());
         $this->assertMatchesRegularExpression(
@@ -73,17 +70,14 @@ class RequestListenerTest extends TestCase
         $storage = $container->get(CorrelationIdStorage::class);
         $listener = $container->get(RequestListener::class);
 
-        // Créer une requête avec header
         $request = Request::create('/test');
         $request->headers->set('X-Correlation-ID', 'my-custom-id-123');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
 
-        // Simuler l'événement
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $listener->onKernelRequest($event);
 
-        // Vérifier que l'ID du header est utilisé
         $this->assertTrue($storage->has());
         $this->assertSame('my-custom-id-123', $storage->get());
 
@@ -99,17 +93,14 @@ class RequestListenerTest extends TestCase
         $storage = $container->get(CorrelationIdStorage::class);
         $listener = $container->get(RequestListener::class);
 
-        // Créer une requête avec header invalide (vide)
         $request = Request::create('/test');
         $request->headers->set('X-Correlation-ID', '');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
 
-        // Simuler l'événement
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $listener->onKernelRequest($event);
 
-        // Vérifier qu'un nouvel ID a été généré
         $this->assertTrue($storage->has());
         $this->assertNotNull($storage->get());
         $this->assertNotEmpty($storage->get());
@@ -139,7 +130,6 @@ class RequestListenerTestKernel extends Kernel
                 'test' => true,
             ]);
 
-            // Rendre request_stack public pour les tests
             if ($container->hasAlias('request_stack')) {
                 $container->getAlias('request_stack')->setPublic(true);
             }

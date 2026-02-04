@@ -80,18 +80,15 @@ class GeneratorTestKernel extends Kernel
     {
         parent::build($container);
 
-        // Ajouter un CompilerPass pour rendre les services publics pour les tests
         $container->addCompilerPass(new class implements CompilerPassInterface {
             public function process(ContainerBuilder $container): void
             {
-                // Rendre le service public pour les tests
                 foreach ($container->getDefinitions() as $id => $definition) {
                     if (str_starts_with($id, 'MdavidDev\\SymfonyCorrelationIdBundle\\')) {
                         $definition->setPublic(true);
                     }
                 }
 
-                // Rendre aussi les alias publics
                 foreach ($container->getAliases() as $id => $alias) {
                     if (str_starts_with($id, 'MdavidDev\\SymfonyCorrelationIdBundle\\')) {
                         $alias->setPublic(true);

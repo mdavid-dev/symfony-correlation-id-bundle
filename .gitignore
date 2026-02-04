@@ -56,4 +56,6 @@
 /.php-cs-fixer.cache
 
 .idea/
+.junie/
 docker-compose.yml
+.aiignore

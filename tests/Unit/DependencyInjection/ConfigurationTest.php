@@ -85,10 +85,8 @@ class ConfigurationTest extends TestCase
 
         $config = $this->processor->processConfiguration($this->configuration, $partialConfig);
 
-        // Vérifie que header_name est personnalisé
         $this->assertSame('X-Trace-ID', $config['header_name']);
 
-        // Vérifie que les autres valeurs sont les valeurs par défaut
         $this->assertSame('uuid_v4', $config['generator']);
         $this->assertTrue($config['trust_header']);
     }

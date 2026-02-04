@@ -40,3 +40,14 @@ services:
       $headerName: '%correlation_id.header_name%'
     tags:
       - { name: kernel.event_subscriber }
+
+  # Console Listener
+  MdavidDev\SymfonyCorrelationIdBundle\EventListener\ConsoleListener:
+    arguments:
+      $storage: '@MdavidDev\SymfonyCorrelationIdBundle\Service\CorrelationIdStorage'
+      $generator: '@MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface'
+      $validator: '@MdavidDev\SymfonyCorrelationIdBundle\Validator\CorrelationIdValidator'
+      $prefix: '%correlation_id.cli.prefix%'
+      $allowOption: '%correlation_id.cli.allow_option%'
+    tags:
+      - { name: kernel.event_subscriber }

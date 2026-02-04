@@ -39,19 +39,15 @@ class CorrelationIdStorageTest extends TestCase
         $container = $kernel->getContainer();
         $storage = $container->get(CorrelationIdStorage::class);
 
-        // Initialement, pas d'ID
         $this->assertFalse($storage->has());
         $this->assertNull($storage->get());
 
-        // Définir un ID
         $correlationId = 'test-functional-id-789';
         $storage->set($correlationId);
 
-        // Vérifier qu'on peut le récupérer
         $this->assertTrue($storage->has());
         $this->assertSame($correlationId, $storage->get());
 
-        // Clear et vérifier
         $storage->clear();
         $this->assertFalse($storage->has());
         $this->assertNull($storage->get());
@@ -87,7 +83,6 @@ class StorageTestKernel extends Kernel
     {
         parent::build($container);
 
-        // Rendre les services publics pour les tests
         $container->addCompilerPass(new class implements CompilerPassInterface {
             public function process(ContainerBuilder $container): void
             {

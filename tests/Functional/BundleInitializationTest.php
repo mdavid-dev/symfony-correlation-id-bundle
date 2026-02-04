@@ -31,18 +31,14 @@ class BundleInitializationTest extends TestCase
         $bundle = new SymfonyCorrelationIdBundle();
         $path = $bundle->getPath();
 
-        // Vérifie que le path existe
         $this->assertDirectoryExists($path);
 
-        // Vérifie que le path contient bien le dossier src/
         $this->assertDirectoryExists($path . '/src');
 
-        // Vérifie que le fichier SymfonyCorrelationIdBundle.php existe dans src/
         $this->assertFileExists($path . '/src/SymfonyCorrelationIdBundle.php');
     }
 }
 
-// Kernel de test minimaliste
 class CorrelationIdTestKernel extends Kernel
 {
     public function registerBundles(): array

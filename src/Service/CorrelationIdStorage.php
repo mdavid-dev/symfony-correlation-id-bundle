@@ -14,7 +14,8 @@ final class CorrelationIdStorage
 
     public function __construct(
         private readonly RequestStack $requestStack
-    ) {
+    )
+    {
     }
 
     /**
@@ -24,12 +25,10 @@ final class CorrelationIdStorage
     {
         $request = $this->requestStack->getCurrentRequest();
 
-        // Si une requête existe, on retourne son ID (ou null si elle n'en a pas)
         if ($request !== null) {
             return $request->attributes->get(self::ATTRIBUTE_NAME);
         }
 
-        // Sinon, on utilise le fallback (contexte CLI, worker, etc.)
         return $this->fallbackId;
     }
 
@@ -43,7 +42,6 @@ final class CorrelationIdStorage
         if ($request !== null) {
             $request->attributes->set(self::ATTRIBUTE_NAME, $correlationId);
         } else {
-            // Fallback pour les contextes sans requête (CLI, tests, etc.)
             $this->fallbackId = $correlationId;
         }
     }

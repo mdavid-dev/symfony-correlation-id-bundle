@@ -36,7 +36,6 @@ class MonologFullCycleTest extends TestCase
         $logger = $container->get('test.logger');
         $testHandler = $container->get('test.handler');
 
-        // 1. Créer et traiter une requête
         $request = Request::create('/test');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
@@ -47,10 +46,8 @@ class MonologFullCycleTest extends TestCase
         $correlationId = $storage->get();
         $this->assertNotNull($correlationId);
 
-        // 2. Écrire un log
         $logger->info('Test log message', ['user_id' => 123]);
 
-        // 3. Vérifier que le log contient l'ID de corrélation
         $records = $testHandler->getRecords();
         $this->assertCount(1, $records);
 
@@ -75,7 +72,6 @@ class MonologFullCycleTest extends TestCase
         $logger = $container->get('test.logger');
         $testHandler = $container->get('test.handler');
 
-        // 1. Créer et traiter une requête
         $request = Request::create('/test');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
@@ -86,10 +82,8 @@ class MonologFullCycleTest extends TestCase
         $correlationId = $storage->get();
         $this->assertNotNull($correlationId);
 
-        // 2. Écrire un log
         $logger->warning('Custom key test');
 
-        // 3. Vérifier que le log contient l'ID avec la clé custom
         $records = $testHandler->getRecords();
         $this->assertCount(1, $records);
 
@@ -110,7 +104,6 @@ class MonologFullCycleTest extends TestCase
         $logger = $container->get('test.logger');
         $testHandler = $container->get('test.handler');
 
-        // Pas de requête, pas d'ID
         $logger->error('Error without correlation ID');
 
         $records = $testHandler->getRecords();
@@ -134,7 +127,6 @@ class MonologFullCycleTest extends TestCase
         $logger = $container->get('test.logger');
         $testHandler = $container->get('test.handler');
 
-        // 1. Créer et traiter une requête
         $request = Request::create('/test');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
@@ -144,13 +136,11 @@ class MonologFullCycleTest extends TestCase
 
         $correlationId = $storage->get();
 
-        // 2. Écrire plusieurs logs
         $logger->debug('First log');
         $logger->info('Second log');
         $logger->warning('Third log');
         $logger->error('Fourth log');
 
-        // 3. Vérifier que tous les logs ont le même ID
         $records = $testHandler->getRecords();
         $this->assertCount(4, $records);
 
@@ -172,7 +162,6 @@ class MonologFullCycleTest extends TestCase
         $logger = $container->get('test.logger');
         $testHandler = $container->get('test.handler');
 
-        // 1. Créer une requête AVEC header
         $request = Request::create('/test');
         $request->headers->set('X-Correlation-ID', 'incoming-correlation-123');
         $requestStack = $container->get('request_stack');
@@ -181,10 +170,8 @@ class MonologFullCycleTest extends TestCase
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $requestListener->onKernelRequest($requestEvent);
 
-        // 2. Écrire un log
         $logger->info('Log with incoming ID');
 
-        // 3. Vérifier que l'ID du header est dans le log
         $records = $testHandler->getRecords();
         $this->assertCount(1, $records);
 
@@ -196,7 +183,7 @@ class MonologFullCycleTest extends TestCase
     }
 }
 
-// Kernel de test avec Monolog activé
+// Test kernel with Monolog enabled
 class MonologFullCycleTestKernel extends Kernel
 {
     public function registerBundles(): array
@@ -225,7 +212,6 @@ class MonologFullCycleTestKernel extends Kernel
                 ],
             ]);
 
-            // Créer un logger de test avec TestHandler
             $container->register('test.handler', TestHandler::class)
                 ->addArgument(Level::Debug)
                 ->setPublic(true);
@@ -275,7 +261,7 @@ class MonologFullCycleTestKernel extends Kernel
     }
 }
 
-// Kernel avec clé custom
+// Kernel with custom key
 class MonologFullCycleTestKernelCustomKey extends Kernel
 {
     public function registerBundles(): array

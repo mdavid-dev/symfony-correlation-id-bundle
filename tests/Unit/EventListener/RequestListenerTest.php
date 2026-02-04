@@ -104,7 +104,7 @@ class RequestListenerTest extends TestCase
         );
 
         $request = new Request();
-        $request->headers->set('X-Correlation-ID', ''); // Invalide (vide)
+        $request->headers->set('X-Correlation-ID', '');
         $this->requestStack->push($request);
         $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
@@ -126,7 +126,7 @@ class RequestListenerTest extends TestCase
             $generator,
             $this->validator,
             'X-Correlation-ID',
-            false // trust_header = false
+            false
         );
 
         $request = new Request();
@@ -157,14 +157,12 @@ class RequestListenerTest extends TestCase
         $request = new Request();
         $this->requestStack->push($request);
 
-        // Définir un ID existant
         $this->storage->set('existing-id');
 
         $event = new RequestEvent($this->kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
         $listener->onKernelRequest($event);
 
-        // L'ID existant ne doit pas avoir changé
         $this->assertSame('existing-id', $this->storage->get());
     }
 
@@ -225,7 +223,7 @@ class RequestListenerTest extends TestCase
             $this->storage,
             $generator,
             $this->validator,
-            'X-Request-ID', // Custom header name
+            'X-Request-ID',
             true
         );
 
