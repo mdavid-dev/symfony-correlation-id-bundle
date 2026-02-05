@@ -16,7 +16,6 @@ use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
-use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -59,7 +58,7 @@ final class ConsoleListenerTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
         
-        $input->method('hasParameterOption')->with('--correlation-id')->willReturn(false);
+        $input->method('getParameterOption')->with('--correlation-id', null)->willReturn(null);
         
         $this->generator->expects($this->once())->method('generate')->willReturn('uuid-123');
 
@@ -75,8 +74,7 @@ final class ConsoleListenerTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
         
-        $input->method('hasParameterOption')->with('--correlation-id')->willReturn(true);
-        $input->method('getParameterOption')->with('--correlation-id')->willReturn('custom-id');
+        $input->method('getParameterOption')->with('--correlation-id', null)->willReturn('custom-id');
         
         $this->generator->expects($this->never())->method('generate');
 
@@ -92,8 +90,7 @@ final class ConsoleListenerTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
         
-        $input->method('hasParameterOption')->with('--correlation-id')->willReturn(true);
-        $input->method('getParameterOption')->with('--correlation-id')->willReturn('   ');
+        $input->method('getParameterOption')->with('--correlation-id', null)->willReturn('   ');
         
         $this->generator->expects($this->once())->method('generate')->willReturn('uuid-456');
 
@@ -103,13 +100,15 @@ final class ConsoleListenerTest extends TestCase
         $this->assertSame('CLI-uuid-456', $this->storage->get());
     }
 
-    public function testDoesNotAddOptionWhenAllowOptionIsFalse(): void
+    public function testDoesNotReadOptionWhenAllowOptionIsFalse(): void
     {
         $listener = new ConsoleListener($this->storage, $this->generator, $this->validator, 'CLI-', false);
         
         $input = $this->createMock(InputInterface::class);
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
+        
+        $input->expects($this->never())->method('getParameterOption');
         
         $this->generator->expects($this->once())->method('generate')->willReturn('uuid-789');
 

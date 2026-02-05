@@ -13,10 +13,10 @@ use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -77,9 +77,19 @@ class ConsoleIntegrationTest extends TestCase
         /** @var CorrelationIdStorage $storage */
         $storage = $container->get(CorrelationIdStorage::class);
 
-        /** @var Application $application */
-        $application = $container->get('console.application');
+        $application = new Application();
+        /** @var EventDispatcherInterface $dispatcher */
+        $dispatcher = $container->get('event_dispatcher');
+        $application->setDispatcher($dispatcher);
         $application->setAutoExit(false);
+
+        $definition = $application->getDefinition();
+        $definition->addOption(new InputOption(
+            'correlation-id',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'Correlation ID for this command execution'
+        ));
 
         $capturedId = null;
         $command = new class($storage, $capturedId) extends Command {
@@ -132,12 +142,12 @@ class ConsoleTestKernel extends Kernel
                 'test' => true,
             ]);
 
-            $container->register('console.application', Application::class)
-                ->setPublic(true)
-                ->addMethodCall('setDispatcher', [new Reference('event_dispatcher')]);
-
             if ($container->hasAlias(CorrelationIdStorage::class)) {
                 $container->getAlias(CorrelationIdStorage::class)->setPublic(true);
+            }
+
+            if ($container->hasAlias('event_dispatcher')) {
+                $container->getAlias('event_dispatcher')->setPublic(true);
             }
         });
     }
