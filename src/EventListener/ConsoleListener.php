@@ -43,12 +43,12 @@ final class ConsoleListener implements EventSubscriberInterface
             return;
         }
 
-        $correlationId = null;
         $input = $event->getInput();
+        $correlationId = null;
 
-        if ($this->allowOption && $input->hasParameterOption('--' . self::OPTION_NAME)) {
-            $value = $input->getParameterOption('--' . self::OPTION_NAME);
-            if (is_string($value)) {
+        if ($this->allowOption) {
+            $value = $input->getParameterOption('--' . self::OPTION_NAME, null);
+            if (is_string($value) && $value !== '') {
                 $correlationId = $this->validator->sanitize($value);
             }
         }
