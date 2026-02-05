@@ -22,7 +22,7 @@ final class ConsoleListener implements EventSubscriberInterface
         private readonly CorrelationIdGeneratorInterface $generator,
         private readonly CorrelationIdValidator          $validator,
         private readonly string                          $prefix = 'CLI-',
-        private readonly bool                            $allowOption = true
+        private readonly bool                            $allowEnvVar = true
     )
     {
     }
@@ -43,13 +43,12 @@ final class ConsoleListener implements EventSubscriberInterface
             return;
         }
 
-        $input = $event->getInput();
         $correlationId = null;
 
-        if ($this->allowOption) {
-            $value = $input->getParameterOption('--' . self::OPTION_NAME, null);
-            if (is_string($value) && $value !== '') {
-                $correlationId = $this->validator->sanitize($value);
+        if ($this->allowEnvVar) {
+            $envValue = $_SERVER['CORRELATION_ID'] ?? $_ENV['CORRELATION_ID'] ?? null;
+            if (is_string($envValue) && $envValue !== '') {
+                $correlationId = $this->validator->sanitize($envValue);
             }
         }
 

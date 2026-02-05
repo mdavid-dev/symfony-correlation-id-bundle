@@ -29,7 +29,7 @@ class ConfigurationTest extends TestCase
 
         $this->assertTrue($config['validation']['enabled']);
         $this->assertSame(255, $config['validation']['max_length']);
-        $this->assertNull($config['validation']['pattern']);
+        $this->assertSame('/^[a-zA-Z0-9-_]+$/', $config['validation']['pattern']);
 
         $this->assertTrue($config['monolog']['enabled']);
         $this->assertSame('correlation_id', $config['monolog']['key']);
@@ -39,7 +39,7 @@ class ConfigurationTest extends TestCase
 
         $this->assertTrue($config['cli']['enabled']);
         $this->assertSame('CLI-', $config['cli']['prefix']);
-        $this->assertTrue($config['cli']['allow_option']);
+        $this->assertTrue($config['cli']['allow_env_var']);
     }
 
     public function testCustomConfiguration(): void

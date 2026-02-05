@@ -70,7 +70,7 @@ correlation_id:
     validation:
         enabled: true
         max_length: 255
-        pattern: null
+        pattern: '/^[a-zA-Z0-9-_]+$/'
     
     monolog:
         enabled: true
@@ -85,7 +85,49 @@ correlation_id:
     cli:
         enabled: true
         prefix: 'CLI-'
-        allow_option: true
+        allow_env_var: true
+```
+
+### Validation & Security
+
+By default, the bundle validates correlation IDs to prevent malicious input:
+
+```yaml
+correlation_id:
+    validation:
+        enabled: true
+        max_length: 255
+        pattern: '/^[a-zA-Z0-9-_]+$/'  # Default: alphanumeric, dashes, underscores only
+```
+
+**Security features:**
+- Rejects empty values
+- Limits length to prevent buffer overflow attacks
+- Blocks special characters that could be used for injection attacks (XSS, SQL injection, shell injection)
+- Automatically generates a safe ID if validation fails
+
+**Customize the pattern** for your needs:
+
+#### UUID v4 only (strictest)
+```yaml
+correlation_id:
+    validation:
+        max_length: 36
+        pattern: '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i'
+```
+
+#### Allow more characters
+```yaml
+correlation_id:
+    validation:
+        pattern: '/^[a-zA-Z0-9-_:]+$/'  # Add colon for custom formats like "APP:REQ:123"
+```
+
+#### Disable pattern validation (not recommended)
+```yaml
+correlation_id:
+    validation:
+        pattern: null  # Only length validation will apply
 ```
 
 ### Configuration Examples
@@ -99,15 +141,6 @@ Always generate a new ID, ignoring incoming headers:
 ```yaml
 correlation_id:
     trust_header: false
-```
-Strict Validation
-Validate incoming IDs with specific rules:
-```yaml
-correlation_id:
-    validation:
-        enabled: true
-        max_length: 36
-        pattern: '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i'
 ```
 #### Enable Monolog Integration
 Automatically add correlation ID to all logs:
@@ -214,15 +247,42 @@ If Monolog is not installed, the integration is automatically disabled.
 
 When CLI integration is enabled (default), the bundle manages correlation IDs for Symfony Console commands.
 
-### Global Option
-If `cli.allow_option` is `true`, a global `--correlation-id` option is added to all commands:
+### Environment Variable
+If `cli.allow_env_var` is `true` (default), you can pass a correlation ID via the `CORRELATION_ID` environment variable:
 
 ```bash
-php bin/console app:my-command --correlation-id=custom-id-123
+CORRELATION_ID=custom-id-123 php bin/console app:my-command
+```
+
+This is particularly useful when executing commands from a Process within an HTTP request context:
+
+```php
+use Symfony\Component\Process\Process;
+
+class MyService
+{
+    public function __construct(
+        private readonly CorrelationIdStorage $correlationIdStorage
+    ) {}
+    
+    public function executeCommand(): void
+    {
+        // Get current correlation ID from HTTP request
+        $correlationId = $this->correlationIdStorage->get();
+        
+        // Pass it to the console command via environment variable
+        $process = new Process(
+            ['php', 'bin/console', 'app:my-command'],
+            env: ['CORRELATION_ID' => $correlationId]
+        );
+        
+        $process->run();
+    }
+}
 ```
 
 ### Automatic ID Generation
-If no option is provided, an ID is automatically generated using the configured generator and prefixed with `cli.prefix` (default: `CLI-`):
+If no environment variable is provided, an ID is automatically generated using the configured generator and prefixed with `cli.prefix` (default: `CLI-`):
 
 **Example output for a generated ID:** `CLI-550e8400-e29b-41d4-a716-446655440000`
 
