@@ -68,8 +68,10 @@ class ConsoleIntegrationTest extends TestCase
     /**
      * @throws Exception
      */
-    public function testConsoleCommandUsesProvidedOption(): void
+    public function testConsoleCommandUsesProvidedEnvVar(): void
     {
+        $_SERVER['CORRELATION_ID'] = 'manual-id-123';
+        
         $kernel = new ConsoleTestKernel('test', true);
         $kernel->boot();
 
@@ -83,20 +85,12 @@ class ConsoleIntegrationTest extends TestCase
         $application->setDispatcher($dispatcher);
         $application->setAutoExit(false);
 
-        $definition = $application->getDefinition();
-        $definition->addOption(new InputOption(
-            'correlation-id',
-            null,
-            InputOption::VALUE_REQUIRED,
-            'Correlation ID for this command execution'
-        ));
-
         $capturedId = null;
         $command = new class($storage, $capturedId) extends Command {
             public ?string $capturedId = null;
             public function __construct(private readonly CorrelationIdStorage $storage, &$capturedId)
             {
-                parent::__construct('test:option');
+                parent::__construct('test:envvar');
                 $this->capturedId = &$capturedId;
             }
 
@@ -108,15 +102,13 @@ class ConsoleIntegrationTest extends TestCase
         };
         $application->addCommands([$command]);
 
-        $input = new ArrayInput([
-            'command' => 'test:option',
-            '--correlation-id' => 'manual-id-123'
-        ]);
+        $input = new ArrayInput(['command' => 'test:envvar']);
         $application->run($input, new NullOutput());
 
         $this->assertSame('manual-id-123', $capturedId);
         $this->assertFalse($storage->has());
 
+        unset($_SERVER['CORRELATION_ID']);
         $kernel->shutdown();
     }
 }

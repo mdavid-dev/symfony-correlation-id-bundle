@@ -52,13 +52,13 @@ final class ConsoleListenerTest extends TestCase
         $this->assertArrayHasKey(ConsoleEvents::ERROR, $events);
     }
 
-    public function testGeneratesIdWithPrefixWhenNoOptionProvided(): void
+    public function testGeneratesIdWithPrefixWhenNoEnvVarProvided(): void
     {
+        unset($_SERVER['CORRELATION_ID'], $_ENV['CORRELATION_ID']);
+        
         $input = $this->createMock(InputInterface::class);
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
-        
-        $input->method('getParameterOption')->with('--correlation-id', null)->willReturn(null);
         
         $this->generator->expects($this->once())->method('generate')->willReturn('uuid-123');
 
@@ -68,13 +68,13 @@ final class ConsoleListenerTest extends TestCase
         $this->assertSame('CLI-uuid-123', $this->storage->get());
     }
 
-    public function testUsesOptionWhenProvidedAndValid(): void
+    public function testUsesEnvVarWhenProvidedAndValid(): void
     {
+        $_SERVER['CORRELATION_ID'] = 'custom-id';
+        
         $input = $this->createMock(InputInterface::class);
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
-        
-        $input->method('getParameterOption')->with('--correlation-id', null)->willReturn('custom-id');
         
         $this->generator->expects($this->never())->method('generate');
 
@@ -82,15 +82,17 @@ final class ConsoleListenerTest extends TestCase
         $this->listener->onConsoleCommand($event);
         
         $this->assertSame('custom-id', $this->storage->get());
+        
+        unset($_SERVER['CORRELATION_ID']);
     }
 
-    public function testGeneratesIdWhenOptionProvidedButInvalid(): void
+    public function testGeneratesIdWhenEnvVarProvidedButInvalid(): void
     {
+        $_SERVER['CORRELATION_ID'] = '   ';
+        
         $input = $this->createMock(InputInterface::class);
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
-        
-        $input->method('getParameterOption')->with('--correlation-id', null)->willReturn('   ');
         
         $this->generator->expects($this->once())->method('generate')->willReturn('uuid-456');
 
@@ -98,17 +100,19 @@ final class ConsoleListenerTest extends TestCase
         $this->listener->onConsoleCommand($event);
         
         $this->assertSame('CLI-uuid-456', $this->storage->get());
+        
+        unset($_SERVER['CORRELATION_ID']);
     }
 
-    public function testDoesNotReadOptionWhenAllowOptionIsFalse(): void
+    public function testDoesNotReadEnvVarWhenAllowEnvVarIsFalse(): void
     {
+        $_SERVER['CORRELATION_ID'] = 'should-be-ignored';
+        
         $listener = new ConsoleListener($this->storage, $this->generator, $this->validator, 'CLI-', false);
         
         $input = $this->createMock(InputInterface::class);
         $output = $this->createMock(OutputInterface::class);
         $command = $this->createMock(Command::class);
-        
-        $input->expects($this->never())->method('getParameterOption');
         
         $this->generator->expects($this->once())->method('generate')->willReturn('uuid-789');
 
@@ -116,6 +120,8 @@ final class ConsoleListenerTest extends TestCase
         $listener->onConsoleCommand($event);
         
         $this->assertSame('CLI-uuid-789', $this->storage->get());
+        
+        unset($_SERVER['CORRELATION_ID']);
     }
 
     public function testOnConsoleTerminateClearsStorage(): void
@@ -150,5 +156,108 @@ final class ConsoleListenerTest extends TestCase
         $event = new ConsoleCommandEvent(null, $input, $output);
         $this->listener->onConsoleCommand($event);
         $this->assertNull($this->storage->get());
+    }
+
+    public function testRejectsInvalidEnvVarAndGeneratesSafeId(): void
+    {
+        $invalidPayloads = [
+            '',
+            '   ',
+            'a' . str_repeat('x', 300),
+        ];
+
+        foreach ($invalidPayloads as $index => $payload) {
+            $_SERVER['CORRELATION_ID'] = $payload;
+
+            $generator = $this->createMock(CorrelationIdGeneratorInterface::class);
+            $generator->expects($this->once())->method('generate')->willReturn('safe-uuid-' . $index);
+            
+            $listener = new ConsoleListener($this->storage, $generator, $this->validator, 'CLI-', true);
+            
+            $input = $this->createMock(InputInterface::class);
+            $output = $this->createMock(OutputInterface::class);
+            $command = $this->createMock(Command::class);
+            
+            $event = new ConsoleCommandEvent($command, $input, $output);
+            $listener->onConsoleCommand($event);
+
+            $storedId = $this->storage->get();
+            $this->assertStringStartsWith('CLI-', $storedId);
+            $this->assertStringContainsString('safe-uuid-' . $index, $storedId);
+
+            $this->storage->clear();
+            unset($_SERVER['CORRELATION_ID']);
+        }
+    }
+
+    public function testRejectsSpecialCharactersWithStrictPattern(): void
+    {
+        $maliciousPayloads = [
+            '<script>alert("XSS")</script>',
+            '"; DROP TABLE users; --',
+            '$(rm -rf /)',
+            '../../../etc/passwd',
+            "\x00\x01\x02",
+        ];
+
+        foreach ($maliciousPayloads as $index => $payload) {
+            $_SERVER['CORRELATION_ID'] = $payload;
+
+            $strictValidator = new CorrelationIdValidator(
+                enabled: true,
+                maxLength: 255,
+                pattern: '/^[a-zA-Z0-9-]+$/'
+            );
+
+            $generator = $this->createMock(CorrelationIdGeneratorInterface::class);
+            $generator->expects($this->once())->method('generate')->willReturn('safe-uuid-' . $index);
+            
+            $listener = new ConsoleListener($this->storage, $generator, $strictValidator, 'CLI-', true);
+            
+            $input = $this->createMock(InputInterface::class);
+            $output = $this->createMock(OutputInterface::class);
+            $command = $this->createMock(Command::class);
+            
+            $event = new ConsoleCommandEvent($command, $input, $output);
+            $listener->onConsoleCommand($event);
+
+            $storedId = $this->storage->get();
+            $this->assertStringStartsWith('CLI-', $storedId);
+            $this->assertStringContainsString('safe-uuid-' . $index, $storedId);
+            $this->assertStringNotContainsString('<', $storedId);
+            $this->assertStringNotContainsString('>', $storedId);
+            $this->assertStringNotContainsString(';', $storedId);
+
+            $this->storage->clear();
+            unset($_SERVER['CORRELATION_ID']);
+        }
+    }
+
+    public function testAcceptsValidEnvVarFormats(): void
+    {
+        $validPayloads = [
+            'simple-id',
+            'UUID-550e8400-e29b-41d4-a716-446655440000',
+            'alphanumeric123',
+            'with-dashes-and-underscores_123',
+        ];
+
+        foreach ($validPayloads as $payload) {
+            $_SERVER['CORRELATION_ID'] = $payload;
+            
+            $input = $this->createMock(InputInterface::class);
+            $output = $this->createMock(OutputInterface::class);
+            $command = $this->createMock(Command::class);
+            
+            $this->generator->expects($this->never())->method('generate');
+            
+            $event = new ConsoleCommandEvent($command, $input, $output);
+            $this->listener->onConsoleCommand($event);
+
+            $this->assertSame($payload, $this->storage->get());
+
+            $this->storage->clear();
+            unset($_SERVER['CORRELATION_ID']);
+        }
     }
 }

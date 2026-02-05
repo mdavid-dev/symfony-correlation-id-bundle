@@ -34,7 +34,7 @@ final class CorrelationIdExtension extends Extension
         $container->setParameter('correlation_id.cli', $config['cli']);
         $container->setParameter('correlation_id.cli.enabled', $config['cli']['enabled']);
         $container->setParameter('correlation_id.cli.prefix', $config['cli']['prefix']);
-        $container->setParameter('correlation_id.cli.allow_option', $config['cli']['allow_option']);
+        $container->setParameter('correlation_id.cli.allow_env_var', $config['cli']['allow_env_var']);
 
         $loader = new YamlFileLoader(
             $container,

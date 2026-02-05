@@ -48,6 +48,6 @@ services:
       $generator: '@MdavidDev\SymfonyCorrelationIdBundle\Service\Generator\CorrelationIdGeneratorInterface'
       $validator: '@MdavidDev\SymfonyCorrelationIdBundle\Validator\CorrelationIdValidator'
       $prefix: '%correlation_id.cli.prefix%'
-      $allowOption: '%correlation_id.cli.allow_option%'
+      $allowEnvVar: '%correlation_id.cli.allow_env_var%'
     tags:
       - { name: kernel.event_subscriber }
