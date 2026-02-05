@@ -45,20 +45,16 @@ class ResponseListenerTest extends TestCase
         $storage = $container->get(CorrelationIdStorage::class);
         $listener = $container->get(ResponseListener::class);
 
-        // Créer une requête et définir un ID
         $request = Request::create('/test');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
         $storage->set('functional-test-id');
 
-        // Créer une réponse
         $response = new Response('OK', 200);
         $event = new ResponseEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST, $response);
 
-        // Appeler le listener
         $listener->onKernelResponse($event);
 
-        // Vérifier que le header est présent
         $this->assertTrue($response->headers->has('X-Correlation-ID'));
         $this->assertSame('functional-test-id', $response->headers->get('X-Correlation-ID'));
 
@@ -73,19 +69,15 @@ class ResponseListenerTest extends TestCase
         $container = $kernel->getContainer();
         $listener = $container->get(ResponseListener::class);
 
-        // Créer une requête SANS définir d'ID
         $request = Request::create('/test');
         $requestStack = $container->get('request_stack');
         $requestStack->push($request);
 
-        // Créer une réponse
         $response = new Response('OK', 200);
         $event = new ResponseEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST, $response);
 
-        // Appeler le listener
         $listener->onKernelResponse($event);
 
-        // Vérifier que le header n'est PAS présent
         $this->assertFalse($response->headers->has('X-Correlation-ID'));
 
         $kernel->shutdown();
@@ -113,7 +105,6 @@ class ResponseListenerTestKernel extends Kernel
                 'test' => true,
             ]);
 
-            // Rendre request_stack public pour les tests
             if ($container->hasAlias('request_stack')) {
                 $container->getAlias('request_stack')->setPublic(true);
             }

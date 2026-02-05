@@ -13,12 +13,10 @@ class MonologCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        // Vérifier si Monolog est disponible
         if (!$this->isMonologAvailable()) {
             return;
         }
 
-        // Vérifier si l'intégration Monolog est activée
         if (!$container->hasParameter('correlation_id.monolog')) {
             return;
         }
@@ -29,10 +27,8 @@ class MonologCompilerPass implements CompilerPassInterface
             return;
         }
 
-        // Enregistrer le processor
         $this->registerProcessor($container, $monologConfig);
 
-        // Ajouter le processor à tous les loggers Monolog
         $this->addProcessorToLoggers($container);
     }
 
@@ -59,30 +55,24 @@ class MonologCompilerPass implements CompilerPassInterface
 
     private function addProcessorToLoggers(ContainerBuilder $container): void
     {
-        // Chercher tous les services dont l'ID commence par "monolog.logger"
         foreach ($container->getDefinitions() as $id => $definition) {
-            // Filtrer uniquement les vrais loggers Monolog
             if (!str_starts_with($id, 'monolog.logger')) {
                 continue;
             }
 
-            // Vérifier que c'est bien un logger Monolog
             $class = $definition->getClass();
             if ($class === null) {
                 $class = $id;
             }
 
-            // Résoudre la classe si c'est un paramètre
             if (str_starts_with($class, '%') && str_ends_with($class, '%')) {
                 $class = $container->getParameter(trim($class, '%'));
             }
 
-            // Vérifier que c'est bien Monolog\Logger ou une sous-classe
             if ($class !== 'Monolog\\Logger' && !is_subclass_of($class, 'Monolog\\Logger')) {
                 continue;
             }
 
-            // Ajouter le processor
             $definition->addMethodCall('pushProcessor', [
                 new Reference(CorrelationIdProcessor::class)
             ]);

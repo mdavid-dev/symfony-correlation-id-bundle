@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MdavidDev\SymfonyCorrelationIdBundle;
 
+use MdavidDev\SymfonyCorrelationIdBundle\DependencyInjection\Compiler\ConsoleCommandCompilerPass;
 use MdavidDev\SymfonyCorrelationIdBundle\DependencyInjection\Compiler\MonologCompilerPass;
 use MdavidDev\SymfonyCorrelationIdBundle\DependencyInjection\CorrelationIdExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -28,5 +29,6 @@ final class SymfonyCorrelationIdBundle extends AbstractBundle
         parent::build($container);
 
         $container->addCompilerPass(new MonologCompilerPass());
+        $container->addCompilerPass(new ConsoleCommandCompilerPass());
     }
 }

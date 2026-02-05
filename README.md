@@ -35,9 +35,6 @@ The bundle works out-of-the-box with default configuration.
 
 ## Quick Start
 
-### Basic Usage
-
-Basic Usage
 Once installed, the bundle automatically:
 
 1. Reads the X-Correlation-ID header from incoming requests
@@ -151,7 +148,7 @@ class UserController extends AbstractController
     #[Route('/api/users', methods: ['GET'])]
     public function list(): JsonResponse
     {
-        $$correlationId = $$this->correlationIdStorage->get();
+        $correlationId = $this->correlationIdStorage->get();
         
         $this->logger->info('Fetching users', [
             'correlation_id' => $correlationId,
@@ -180,6 +177,7 @@ $this->correlationIdStorage->clear();
 ```
 
 ## Monolog Integration
+
 ### Automatic Logging
 When Monolog integration is enabled (default), the correlation ID is automatically added to all log entries in the `extra` field.
 **Example log output:**
@@ -211,6 +209,33 @@ Monolog integration requires the monolog/monolog package:
 composer require monolog/monolog
 ```
 If Monolog is not installed, the integration is automatically disabled.
+
+## CLI Integration
+
+When CLI integration is enabled (default), the bundle manages correlation IDs for Symfony Console commands.
+
+### Global Option
+If `cli.allow_option` is `true`, a global `--correlation-id` option is added to all commands:
+
+```bash
+php bin/console app:my-command --correlation-id=custom-id-123
+```
+
+### Automatic ID Generation
+If no option is provided, an ID is automatically generated using the configured generator and prefixed with `cli.prefix` (default: `CLI-`):
+
+**Example output for a generated ID:** `CLI-550e8400-e29b-41d4-a716-446655440000`
+
+### Access in Commands
+You can access the ID in your commands just like in controllers:
+
+```php
+protected function execute(InputInterface $input, OutputInterface $output): int
+{
+    $correlationId = $this->correlationIdStorage->get();
+    // ...
+}
+```
 
 ## Advanced Usage
 

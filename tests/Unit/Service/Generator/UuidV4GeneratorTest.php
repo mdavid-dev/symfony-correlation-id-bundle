@@ -28,8 +28,6 @@ class UuidV4GeneratorTest extends TestCase
     {
         $id = $this->generator->generate();
 
-        // Format UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-        // où y est 8, 9, a, ou b
         $pattern = '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
         $this->assertMatchesRegularExpression($pattern, $id);
@@ -39,12 +37,10 @@ class UuidV4GeneratorTest extends TestCase
     {
         $ids = [];
 
-        // Génère 100 IDs
         for ($i = 0; $i < 100; $i++) {
             $ids[] = $this->generator->generate();
         }
 
-        // Vérifie qu'ils sont tous uniques
         $uniqueIds = array_unique($ids);
         $this->assertCount(100, $uniqueIds);
     }
@@ -53,7 +49,6 @@ class UuidV4GeneratorTest extends TestCase
     {
         $id = $this->generator->generate();
 
-        // UUID v4 format: 36 caractères (32 hexa + 4 tirets)
         $this->assertSame(36, strlen($id));
     }
 
@@ -62,7 +57,6 @@ class UuidV4GeneratorTest extends TestCase
         $id1 = $this->generator->generate();
         $id2 = $this->generator->generate();
 
-        // Deux appels consécutifs doivent produire des IDs différents
         $this->assertNotSame($id1, $id2);
     }
 }

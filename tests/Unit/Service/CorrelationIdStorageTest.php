@@ -44,7 +44,6 @@ class CorrelationIdStorageTest extends TestCase
 
     public function testSetAndGetWithoutRequest(): void
     {
-        // Pas de requête dans le stack
         $correlationId = 'fallback-id-456';
         $this->storage->set($correlationId);
 
@@ -86,13 +85,10 @@ class CorrelationIdStorageTest extends TestCase
         $this->requestStack->push($request2);
         $this->storage->set('id-2');
 
-        // La requête courante (request2) doit avoir 'id-2'
         $this->assertSame('id-2', $this->storage->get());
 
-        // Retirer request2
         $this->requestStack->pop();
 
-        // Maintenant on doit avoir 'id-1' (de request1)
         $this->assertSame('id-1', $this->storage->get());
     }
 
@@ -110,18 +106,14 @@ class CorrelationIdStorageTest extends TestCase
 
     public function testFallbackIsUsedWhenNoRequest(): void
     {
-        // Définir un ID sans requête
         $this->storage->set('fallback-id');
         $this->assertSame('fallback-id', $this->storage->get());
 
-        // Ajouter une requête
         $request = new Request();
         $this->requestStack->push($request);
 
-        // Le fallback ne doit plus être utilisé (pas d'ID dans la requête)
         $this->assertNull($this->storage->get());
 
-        // Définir un ID dans la requête
         $this->storage->set('request-id');
         $this->assertSame('request-id', $this->storage->get());
     }
